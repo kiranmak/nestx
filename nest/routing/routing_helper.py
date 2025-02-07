@@ -61,6 +61,7 @@ class RoutingHelper:
         "ospf": ["nest.routing.ospf", "Ospf"],
         "rip": ["nest.routing.rip", "Rip"],
         "isis": ["nest.routing.isis", "Isis"],
+        "bgp": ["nest.routing.bgp", "Bgp"],
         "static": ["nest.routing.static_routing", "StaticRouting"],
     }
 
@@ -96,7 +97,7 @@ class RoutingHelper:
             Only enables ldp discovery on interfaces with mpls enabled
         """
 
-        if protocol not in ["rip", "ospf", "isis", "static"]:
+        if protocol not in ["rip", "ospf", "isis", "bgp", "static"]:
             raise ValueError(
                 f"Supported routing protocols are rip, ospf, isis and static, "
                 f"but got protocol {protocol}"
@@ -134,7 +135,7 @@ class RoutingHelper:
         self.protocol_list = []
         self.ldp_list = []
 
-        atexit.register(self._clean_up)
+        #atexit.register(self._clean_up)
 
     def populate_routing_tables(self):
         """
@@ -196,10 +197,28 @@ class RoutingHelper:
         str:
             path of the created directory
         """
+        if self.conf_dir is not None:
+            print("\t\t Conf-Dir is ", self.conf_dir)
+            return self.conf_dir
+
         salt = config.get_value("routing_suite") + str(time.clock_gettime(0))
         dir_path = f"/tmp/{salt}-configs_{IdGen.topology_id}"
         self._create_directory(dir_path)
         return dir_path
+
+    def create_conf_dir(self, dir_path):
+        """
+        Creates a directory for holding routing related config
+        and pid files.
+        Override this to create directory at a location other than /tmp
+
+        Returns
+        -------
+        str:
+            path of the created directory
+        """
+        self._create_directory(dir_path)
+        self.conf_dir = dir_path
 
     def _create_log_directory(self):
         """
@@ -261,7 +280,12 @@ class RoutingHelper:
             logger.info("Running zebra and %s on routers (IPv6)", self.protocol)
         else:
             logger.info("Running zebra and %s on routers", self.protocol)
-        self.conf_dir = self._create_conf_directory()
+        if self.conf_dir is None:
+            logger.info("Creating conf_dir routers")
+            self.conf_dir = self._create_conf_directory()
+        else:
+            logger.info("User specified %s conf_dir path", self.conf_dir)
+
         if config.get_value("routing_logs"):
             self.log_dir = self._create_log_directory()
 
@@ -352,7 +376,7 @@ class RoutingHelper:
                         .interfaces[0]
                         .get_address(not self.ipv6_routing, self.ipv6_routing, True)
                     ):
-                        if not self.hosts[i].ping(k_addr.get_addr(), verbose=0):
+                        if not self.hosts[i].ping(k_addr.get_addr(), packets=1, verbose=0):
                             converged = False
                             break
                     if not converged:
@@ -382,6 +406,7 @@ class RoutingHelper:
         # To preserve the routes, the daemons shouldn't be stopped
         # Frrouting doesn't seem to have an option to not flush the routes installed
 
+        print("###### ENTERING CLEANUP ")
         # Stop ldp processes
         for ldp in self.ldp_list:
             if path.isfile(ldp.pid_file):

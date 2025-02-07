@@ -6,7 +6,7 @@
 import logging
 import shlex
 import subprocess
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 
 
 logger = logging.getLogger(__name__)
@@ -41,13 +41,20 @@ def exec_subprocess(cmd, shell=False, output=False):
     if shell is False:
         temp_cmd = cmd.split()
 
-    with Popen(temp_cmd, stdout=PIPE, stderr=PIPE, shell=shell) as proc:
+    if not output:
+        oe_pipe = DEVNULL
+    else:
+        oe_pipe = PIPE
+
+    with Popen(temp_cmd, stdout=oe_pipe, stderr=oe_pipe,
+               shell=shell) as proc:
 
         (stdout, _) = proc.communicate()
         logger.trace(cmd)
 
         if output:
             return stdout.decode()
+
         return proc.returncode
 
 

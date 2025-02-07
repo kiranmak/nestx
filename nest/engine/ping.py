@@ -41,11 +41,11 @@ def ping(ns_name, dest_addr, preload=1, packets=1, ipv6=False, live_output=True)
             )
     else:
         if ipv6:
-            status = exec_subprocess(
+            status = exec_subprocess_with_live_output(
                 f"ip netns exec {ns_name} ping -6 -l {preload} -c {packets} {dest_addr}"
             )
         else:
-            status = exec_subprocess(
+            status = exec_subprocess_with_live_output(
                 f"ip netns exec {ns_name} ping -l {preload} -c {packets} {dest_addr}"
             )
     return status == 0

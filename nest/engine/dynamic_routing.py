@@ -5,7 +5,7 @@
 from os import path
 from nest.engine.util import is_dependency_installed
 from .. import config
-from .exec import exec_subprocess
+from .exec import exec_subprocess, exec_subprocess_in_background
 
 # Path to routing_suite daemon binaries
 FRR_DAEMONPATH = "/usr/lib/frr/"
@@ -30,6 +30,7 @@ def run_zebra(ns_id, conf_file, pid_file):
     else:
         cmd = f"ip netns exec {ns_id} zebra --config_file {conf_file} \
                 --pid_file {pid_file} --retain --daemon"
+    print("\n\t ZEBRA CMD", cmd, "\n")
     exec_subprocess(cmd)
 
 
@@ -150,6 +151,34 @@ def run_ldpd(ns_id, conf_file, pid_file):
         exec_subprocess(cmd)
     else:
         raise Exception("Ldp requires Frrouting")
+
+def run_bgpd(ns_id, conf_file, pid_file, ipv6, **kwargs):
+    """
+    Runs the BGP daemon 
+    Requires frr routing_suite
+
+    Parameters
+    ----------
+    ns_id : str
+        namespace of the router
+    conf_file : str
+        path to config file
+    pid_file : str
+        path to pid file
+    """
+    import subprocess
+    from subprocess import Popen, DEVNULL
+    from .exec import logger
+    cmd = f"ip netns exec {ns_id} {FRR_DAEMONPATH}bgpd " \
+          f"--config_file {conf_file} " \
+          f"--pid_file {pid_file} --daemon"
+    #print("command = \n", cmd)
+    #exec_subprocess(cmd)
+    with Popen(cmd, stdout=DEVNULL, stderr=DEVNULL) as proc:
+
+        proc.communicate()
+        logger.trace(cmd)
+
 
 
 def supports_dynamic_routing(daemon):
