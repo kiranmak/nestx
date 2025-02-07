@@ -42,11 +42,13 @@ This can possibly be done with the following high level architecture
 ```
 
 ### The existing modules in above diagram are:
+
 - Namespaces: Basic network namespace suport on linux.
 - FRRd: open source FRR installation
 - NeST: NeST module
 
 ### New moduels will be
+
 -Topo-Extension: a topology repository to create different types of simple or complex topologies (with ability to scale)
     (TBD: is it more intersting to exted current TopologyMap in NeST?)
 - NS-CLI: This will help us go beyond NeST's start-run-cleanup methodology. We can create topology, addresses, interfaces, daemons, then interface with namespaces directly for any further control.
