@@ -51,7 +51,7 @@ def kill_processes():
 
 
 @atexit.register
-@ipv6_dad_check
+#@ipv6_dad_check
 def delete_namespaces():
     """
     Delete all the newly generated namespaces
